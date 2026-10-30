@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otit Saving</title>
+  <meta name="description" content="Pencatatan uang masuk dan keluar dengan database Google Sheets">
+  <meta name="theme-color" content="#2f6fed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Otit Saving">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <h1>💰 Otit Saving</h1>
+      <div class="topbar-actions">
+        <button class="btn primary" id="btnInstall" title="Pasang sebagai aplikasi" hidden>⤓ Install</button>
+        <button class="btn ghost" id="btnRefresh" title="Muat ulang data">↻ Muat ulang</button>
+        <button class="btn ghost" id="btnSettings" title="Pengaturan">⚙ Pengaturan</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="alert" class="alert" hidden></div>
+
+    <section class="cards">
+      <div class="card">
+        <span class="card-label">Saldo keseluruhan</span>
+        <strong class="card-value" id="sumSaldo">Rp0</strong>
+      </div>
+      <div class="card in">
+        <span class="card-label">Masuk <span class="period-label"></span></span>
+        <strong class="card-value" id="sumMasuk">Rp0</strong>
+      </div>
+      <div class="card out">
+        <span class="card-label">Keluar <span class="period-label"></span></span>
+        <strong class="card-value" id="sumKeluar">Rp0</strong>
+      </div>
+      <div class="card">
+        <span class="card-label">Selisih <span class="period-label"></span></span>
+        <strong class="card-value" id="sumSelisih">Rp0</strong>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <label class="field">
+          <span>Bulan</span>
+          <input type="month" id="fBulan">
+        </label>
+        <label class="field">
+          <span>Jenis</span>
+          <select id="fJenis">
+            <option value="">Semua</option>
+            <option value="masuk">Masuk</option>
+            <option value="keluar">Keluar</option>
+          </select>
+        </label>
+        <label class="field grow">
+          <span>Cari</span>
+          <input type="search" id="fCari" placeholder="Kategori atau keterangan">
+        </label>
+        <div class="toolbar-actions">
+          <button class="btn ghost" id="btnExport" title="Unduh data yang tampil sebagai CSV">⬇ CSV</button>
+          <button class="btn primary" id="btnTambah">+ Tambah transaksi</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Kategori</th>
+              <th>Keterangan</th>
+              <th class="num">Jumlah</th>
+              <th class="actions-col"><span class="sr-only">Aksi</span></th>
+            </tr>
+          </thead>
+          <tbody id="txBody"></tbody>
+        </table>
+        <p class="empty" id="emptyState" hidden>Belum ada transaksi untuk filter ini.</p>
+        <p class="empty" id="loadingState" hidden>Memuat data…</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Pengeluaran per kategori <span class="period-label muted"></span></h2>
+      <div id="kategoriList" class="kategori-list"></div>
+    </section>
+  </main>
+
+  <!-- Form tambah / ubah transaksi -->
+  <dialog id="dlgTx">
+    <form id="formTx" method="dialog">
+      <h2 id="dlgTxTitle">Tambah transaksi</h2>
+      <div class="seg" role="radiogroup" aria-label="Jenis transaksi">
+        <label><input type="radio" name="jenis" value="masuk" required> Uang masuk</label>
+        <label><input type="radio" name="jenis" value="keluar" checked> Uang keluar</label>
+      </div>
+      <label class="field">
+        <span>Tanggal</span>
+        <input type="date" name="tanggal" required>
+      </label>
+      <label class="field">
+        <span>Jumlah (Rp)</span>
+        <input type="text" name="jumlah" inputmode="numeric" placeholder="0" autocomplete="off" required>
+      </label>
+      <label class="field">
+        <span>Kategori</span>
+        <input type="text" name="kategori" list="kategoriOptions" placeholder="mis. Makan, Gaji, Transport" maxlength="100">
+        <datalist id="kategoriOptions"></datalist>
+      </label>
+      <label class="field">
+        <span>Keterangan</span>
+        <textarea name="keterangan" rows="2" maxlength="500" placeholder="Opsional"></textarea>
+      </label>
+      <p class="form-error" id="formTxError" hidden></p>
+      <div class="dlg-actions">
+        <button type="button" class="btn ghost" data-close>Batal</button>
+        <button type="submit" class="btn primary" id="btnSimpan">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Pengaturan koneksi -->
+  <dialog id="dlgSettings">
+    <form id="formSettings" method="dialog">
+      <h2>Pengaturan</h2>
+      <label class="field">
+        <span>URL Web App Apps Script</span>
+        <input type="url" name="apiUrl" placeholder="https://script.google.com/macros/s/…/exec" required>
+      </label>
+      <label class="field">
+        <span>PIN</span>
+        <input type="password" name="pin" autocomplete="current-password" required>
+      </label>
+      <p class="hint">PIN disimpan hanya di browser ini. Atur PIN di Script Properties (<code>APP_PIN</code>).</p>
+      <p class="form-error" id="formSettingsError" hidden></p>
+      <div class="dlg-actions">
+        <button type="button" class="btn ghost" id="btnLogout">Hapus dari browser</button>
+        <button type="button" class="btn ghost" data-close>Batal</button>
+        <button type="submit" class="btn primary" id="btnSimpanSettings">Simpan &amp; uji</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
