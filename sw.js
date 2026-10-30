@@ -1,6 +1,6 @@
 // Service worker Otit Saving.
 // Naikkan CACHE_VERSION setiap kali daftar APP_SHELL berubah.
-var CACHE_VERSION = 'v1';
+var CACHE_VERSION = 'v2';
 var CACHE_NAME = 'otit-saving-' + CACHE_VERSION;
 
 var APP_SHELL = [

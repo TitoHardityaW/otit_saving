@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  var LS_URL = 'otit_saving.apiUrl';
   var LS_PIN = 'otit_saving.pin';
 
   var state = {
@@ -30,15 +29,15 @@
   }
 
   function apiUrl() {
-    return lsGet(LS_URL) || (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
+    return (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '';
   }
 
   // ---------- API ----------
   // Content-Type text/plain agar tidak memicu preflight CORS ke Apps Script.
-  function api(action, payload, overrides) {
-    var url = (overrides && overrides.url) || apiUrl();
-    var pin = (overrides && overrides.pin) || lsGet(LS_PIN);
-    if (!url) return Promise.reject(new Error('URL Web App belum diatur. Buka Pengaturan.'));
+  function api(action, payload, pinOverride) {
+    var url = apiUrl();
+    var pin = pinOverride || lsGet(LS_PIN);
+    if (!url) return Promise.reject(new Error('Aplikasi belum dikonfigurasi (API_URL di config.js kosong).'));
 
     var body = Object.assign({ action: action, pin: pin }, payload || {});
     return fetch(url, {
@@ -212,8 +211,8 @@
 
   // ---------- Data ----------
   function load() {
-    if (!apiUrl() || !lsGet(LS_PIN)) {
-      openSettings();
+    if (!lsGet(LS_PIN)) {
+      openLogin();
       return;
     }
     state.loading = true;
@@ -226,6 +225,11 @@
         sortTransaksi();
       })
       .catch(function (err) {
+        if (err.message === 'PIN salah.') {
+          // PIN di Script Properties sudah diganti: minta login ulang.
+          logout();
+          return;
+        }
         showAlert(navigator.onLine === false
           ? 'Anda sedang offline. Data akan dimuat saat koneksi kembali.'
           : 'Gagal memuat data: ' + err.message);
@@ -310,48 +314,46 @@
       });
   }
 
-  // ---------- Dialog pengaturan ----------
-  function openSettings() {
-    var form = $('formSettings');
-    form.apiUrl.value = apiUrl();
-    form.pin.value = lsGet(LS_PIN);
-    $('formSettingsError').hidden = true;
-    $('dlgSettings').showModal();
+  // ---------- Login ----------
+  function openLogin() {
+    var form = $('formLogin');
+    form.reset();
+    $('formLoginError').hidden = true;
+    if (!$('dlgLogin').open) $('dlgLogin').showModal();
+    form.pin.focus();
   }
 
-  function submitSettings(e) {
+  function submitLogin(e) {
     e.preventDefault();
-    var form = $('formSettings');
-    var url = form.apiUrl.value.trim();
+    var form = $('formLogin');
     var pin = form.pin.value;
-    var btn = $('btnSimpanSettings');
+    var btn = $('btnLogin');
     btn.disabled = true;
-    btn.textContent = 'Menguji…';
-    $('formSettingsError').hidden = true;
+    btn.textContent = 'Memeriksa…';
+    $('formLoginError').hidden = true;
 
-    api('ping', null, { url: url, pin: pin })
+    api('ping', null, pin)
       .then(function () {
-        lsSet(LS_URL, url);
         lsSet(LS_PIN, pin);
-        $('dlgSettings').close();
+        $('dlgLogin').close();
         load();
       })
       .catch(function (err) {
-        $('formSettingsError').textContent = 'Koneksi gagal: ' + err.message;
-        $('formSettingsError').hidden = false;
+        $('formLoginError').textContent = err.message === 'PIN salah.' ? 'PIN salah.' : 'Gagal masuk: ' + err.message;
+        $('formLoginError').hidden = false;
+        form.pin.select();
       })
       .then(function () {
         btn.disabled = false;
-        btn.textContent = 'Simpan & uji';
+        btn.textContent = 'Masuk';
       });
   }
 
   function logout() {
-    lsDel(LS_URL);
     lsDel(LS_PIN);
     state.transaksi = [];
     render();
-    openSettings();
+    openLogin();
   }
 
   // ---------- Ekspor CSV ----------
@@ -421,11 +423,14 @@
 
     $('btnTambah').addEventListener('click', function () { openTx(null); });
     $('btnRefresh').addEventListener('click', load);
-    $('btnSettings').addEventListener('click', openSettings);
     $('btnExport').addEventListener('click', exportCsv);
-    $('btnLogout').addEventListener('click', logout);
+    $('btnLogout').addEventListener('click', function () {
+      if (confirm('Keluar dari aplikasi?')) logout();
+    });
     $('formTx').addEventListener('submit', submitTx);
-    $('formSettings').addEventListener('submit', submitSettings);
+    $('formLogin').addEventListener('submit', submitLogin);
+    // Dialog login tidak boleh ditutup dengan tombol Esc.
+    $('dlgLogin').addEventListener('cancel', function (e) { e.preventDefault(); });
 
     // Format ribuan saat mengetik jumlah.
     $('formTx').jumlah.addEventListener('input', function (e) {

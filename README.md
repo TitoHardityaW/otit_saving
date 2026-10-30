@@ -51,9 +51,9 @@ window.APP_CONFIG = {
 };
 ```
 
-Alternatifnya biarkan kosong dan isi URL lewat menu **⚙ Pengaturan** di aplikasi (tersimpan di browser).
+Pengguna tidak perlu tahu URL ini — saat membuka aplikasi, cukup **login dengan PIN** (`APP_PIN`). PIN disimpan di `localStorage` browser sampai pengguna menekan **Keluar**. Bila `APP_PIN` diganti di Script Properties, pengguna otomatis diminta login ulang.
 
-**PIN tidak pernah ditulis di repo.** PIN diminta saat pertama kali membuka aplikasi dan disimpan di `localStorage` browser tersebut.
+**PIN tidak pernah ditulis di repo.**
 
 ## 3. Publish ke GitHub Pages
 
@@ -76,6 +76,6 @@ Cukup buka lewat XAMPP: `http://localhost/otit_saving/`, atau web server statis 
 
 ## Catatan keamanan
 
-- URL Web App bersifat publik, tetapi setiap permintaan wajib menyertakan PIN yang cocok dengan `APP_PIN`. Gunakan PIN yang tidak mudah ditebak.
+- URL Web App tidak ditampilkan di aplikasi, tetapi tetap bisa dilihat lewat source code halaman (`config.js`) karena situsnya statis dan publik. Yang melindungi data adalah PIN: setiap permintaan wajib menyertakan PIN yang cocok dengan `APP_PIN`. Gunakan PIN yang tidak mudah ditebak (sebaiknya 6 digit atau lebih).
 - Data asli ada di Google Spreadsheet Anda; spreadsheet itu tetap bisa dibuka dan diedit langsung.
-- Untuk mengganti PIN, ubah `APP_PIN` di Script Properties lalu masukkan PIN baru di menu Pengaturan aplikasi.
+- Untuk mengganti PIN, ubah `APP_PIN` di Script Properties; aplikasi akan otomatis meminta login ulang dengan PIN baru.

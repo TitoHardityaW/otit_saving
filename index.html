@@ -22,7 +22,7 @@
       <div class="topbar-actions">
         <button class="btn primary" id="btnInstall" title="Pasang sebagai aplikasi" hidden>⤓ Install</button>
         <button class="btn ghost" id="btnRefresh" title="Muat ulang data">↻ Muat ulang</button>
-        <button class="btn ghost" id="btnSettings" title="Pengaturan">⚙ Pengaturan</button>
+        <button class="btn ghost" id="btnLogout" title="Keluar">⎋ Keluar</button>
       </div>
     </div>
   </header>
@@ -130,24 +130,20 @@
     </form>
   </dialog>
 
-  <!-- Pengaturan koneksi -->
-  <dialog id="dlgSettings">
-    <form id="formSettings" method="dialog">
-      <h2>Pengaturan</h2>
-      <label class="field">
-        <span>URL Web App Apps Script</span>
-        <input type="url" name="apiUrl" placeholder="https://script.google.com/macros/s/…/exec" required>
-      </label>
+  <!-- Login dengan PIN -->
+  <dialog id="dlgLogin">
+    <form id="formLogin" method="dialog">
+      <div class="login-head">
+        <img src="assets/icons/icon-192.png" alt="" width="56" height="56">
+        <h2>Masuk ke Otit Saving</h2>
+      </div>
       <label class="field">
         <span>PIN</span>
-        <input type="password" name="pin" autocomplete="current-password" required>
+        <input type="password" name="pin" inputmode="numeric" autocomplete="current-password" required autofocus>
       </label>
-      <p class="hint">PIN disimpan hanya di browser ini. Atur PIN di Script Properties (<code>APP_PIN</code>).</p>
-      <p class="form-error" id="formSettingsError" hidden></p>
+      <p class="form-error" id="formLoginError" hidden></p>
       <div class="dlg-actions">
-        <button type="button" class="btn ghost" id="btnLogout">Hapus dari browser</button>
-        <button type="button" class="btn ghost" data-close>Batal</button>
-        <button type="submit" class="btn primary" id="btnSimpanSettings">Simpan &amp; uji</button>
+        <button type="submit" class="btn primary block" id="btnLogin">Masuk</button>
       </div>
     </form>
   </dialog>
